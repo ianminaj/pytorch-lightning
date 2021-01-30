@@ -11,7 +11,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 """
 Weights and Biases Logger
 -------------------------
@@ -98,9 +97,8 @@ class WandbLogger(LightningLoggerBase):
         sync_step: Optional[bool] = True,
         **kwargs
     ):
-        if wandb is None:
-            raise ImportError('You want to use `wandb` logger which is not installed yet,'  # pragma: no-cover
-                              ' install it with `pip install wandb`.')
+        if wandb is None:  # pragma: no-cover
+            raise ImportError('You want to use `wandb` logger which is not installed yet, install it with `pip install wandb`.')
 
         if offline and log_model:
             raise MisconfigurationException(
@@ -180,7 +178,8 @@ class WandbLogger(LightningLoggerBase):
         if self._sync_step and step is not None and step + self._step_offset < self.experiment.step:
             self.warning_cache.warn(
                 'Trying to log at a previous step. Use `WandbLogger(sync_step=False)`'
-                ' or try logging with `commit=False` when calling manually `wandb.log`.')
+                ' or try logging with `commit=False` when calling manually `wandb.log`.'
+            )
         if self._sync_step:
             self.experiment.log(metrics, step=(step + self._step_offset) if step is not None else None)
         elif step is not None:
