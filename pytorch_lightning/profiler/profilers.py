@@ -402,7 +402,7 @@ class PyTorchProfiler(BaseProfiler):
 
         if self.sort_by_key not in self.AVAILABLE_SORT_KEYS:
             raise MisconfigurationException(
-                f"Found sort_by_key: {sort_by_key}. Should be within {self.AVAILABLE_SORT_KEYS}. "
+                f"Found sort_by_key: {sort_by_key}. Should be within {self.AVAILABLE_SORT_KEYS}."
             )
 
         self.profiled_actions = {}
