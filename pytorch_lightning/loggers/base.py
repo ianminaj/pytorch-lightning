@@ -98,9 +98,11 @@ class LightningLoggerBase(ABC):
     def experiment(self) -> Any:
         """Return the experiment object associated with this logger."""
 
-    def _aggregate_metrics(self,
-                           metrics: Dict[str, float],
-                           step: Optional[int] = None) -> Tuple[int, Optional[Dict[str, float]]]:
+    def _aggregate_metrics(
+        self,
+        metrics: Dict[str, float],
+        step: Optional[int] = None,
+    ) -> Tuple[int, Optional[Dict[str, float]]]:
         """
         Aggregates metrics.
 
