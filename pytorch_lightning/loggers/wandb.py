@@ -98,7 +98,9 @@ class WandbLogger(LightningLoggerBase):
         **kwargs
     ):
         if wandb is None:  # pragma: no-cover
-            raise ImportError('You want to use `wandb` logger which is not installed yet, install it with `pip install wandb`.')
+            raise ImportError(
+                'You want to use `wandb` logger which is not installed yet, install it with `pip install wandb`.'
+            )
 
         if offline and log_model:
             raise MisconfigurationException(
@@ -149,8 +151,14 @@ class WandbLogger(LightningLoggerBase):
             if self._offline:
                 os.environ['WANDB_MODE'] = 'dryrun'
             self._experiment = wandb.init(
-                name=self._name, dir=self._save_dir, project=self._project, anonymous=self._anonymous,
-                id=self._id, resume='allow', **self._kwargs) if wandb.run is None else wandb.run
+                name=self._name,
+                dir=self._save_dir,
+                project=self._project,
+                anonymous=self._anonymous,
+                id=self._id,
+                resume='allow',
+                **self._kwargs
+            ) if wandb.run is None else wandb.run
 
             # offset logging step when resuming a run
             self._step_offset = self._experiment.step

@@ -514,7 +514,10 @@ class ModelCheckpoint(Callback):
             last_filepath = os.path.join(self.dirpath, f"{last_filepath}{self.FILE_EXTENSION}")
         else:
             last_filepath = self._get_metric_interpolated_filepath_name(
-                ckpt_name_metrics, trainer.current_epoch, trainer.global_step, trainer,
+                ckpt_name_metrics,
+                trainer.current_epoch,
+                trainer.global_step,
+                trainer,
             )
 
         accelerator_backend = trainer.accelerator_backend
@@ -525,10 +528,8 @@ class ModelCheckpoint(Callback):
         else:
             self._save_model(last_filepath, trainer, pl_module)
         if (
-                self.last_model_path
-                and self.last_model_path != last_filepath
-                and (self.save_top_k != -1 or self.save_last)
-                and trainer.is_global_zero
+            self.last_model_path and self.last_model_path != last_filepath
+            and (self.save_top_k != -1 or self.save_last) and trainer.is_global_zero
         ):
             self._del_model(self.last_model_path)
         self.last_model_path = last_filepath
