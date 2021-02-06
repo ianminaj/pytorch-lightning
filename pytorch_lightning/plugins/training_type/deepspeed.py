@@ -13,18 +13,18 @@
 # limitations under the License.
 
 import json
+import logging
 import os
 from pathlib import Path
 from types import SimpleNamespace
-from typing import Any, Optional, Union
+from typing import Any, Optional, Union, Tuple, Callable
 from typing import List
 
-import deepspeed
 import torch
 import torch.distributed as torch_distrib
 from pytorch_lightning.core.lightning import LightningModule
+from pytorch_lightning.overrides.base import _LightningModuleWrapperBase
 
-from pytorch_lightning.overrides.data_parallel import LightningDistributedModule
 from pytorch_lightning.plugins.training_type.parallel import ParallelPlugin
 from pytorch_lightning.utilities.apply_func import move_float_tensors_to_half
 from pytorch_lightning.utilities.seed import seed_everything
@@ -33,16 +33,21 @@ from pytorch_lightning.distributed import LightningDistributed
 from pytorch_lightning.utilities import AMPType
 from pytorch_lightning.utilities.distributed import sync_ddp_if_available, rank_zero_only
 from pytorch_lightning.utilities.exceptions import MisconfigurationException
+from pytorch_lightning.utilities.imports import _DEEPSPEED_AVAILABLE
+
+if _DEEPSPEED_AVAILABLE:
+    import deepspeed
+else:
+    deepspeed = None
 
 if torch.distributed.is_available():
     from torch.distributed import ReduceOp
 else:
-
     class ReduceOp:
         SUM = None
 
 
-class LightningDeepSpeedModule(LightningDistributedModule):
+class LightningDeepSpeedModule(_LightningModuleWrapperBase):
 
     def __init__(self, pl_module: LightningModule, precision: int):
         super().__init__(pl_module)
@@ -62,6 +67,7 @@ class DeepSpeedPlugin(ParallelPlugin):
             self,
             parallel_devices: List[torch.device],
             config: Union[Path, str, dict],
+            logging_level: int = logging.WARN
     ) -> None:
         super().__init__(parallel_devices)
         self.dist = LightningDistributed()
@@ -71,6 +77,7 @@ class DeepSpeedPlugin(ParallelPlugin):
         else:
             self.config = config
         self._config_initialized = False
+        deepspeed.utils.logging.logger.setLevel(logging_level)
 
     def setup(self, model):
         self.model = model
@@ -122,7 +129,7 @@ class DeepSpeedPlugin(ParallelPlugin):
         if self.lightning_module.training:
             trainer.optimizers = [optimizer]
             trainer.lr_schedulers = self.configure_scheduler(lr_scheduler)
-            trainer.convert_to_lightning_optimizers(trainer.optimizers)
+            trainer.convert_to_lightning_optimizers()
         self.model = model
 
     def configure_scheduler(self, lr_scheduler):
@@ -161,11 +168,14 @@ class DeepSpeedPlugin(ParallelPlugin):
         )
         return distributed_sampler_kwargs
 
-    def init_optimizers(self, trainer: "Trainer", model: LightningModule):
+    def init_optimizers(self, trainer: "Trainer", model: LightningModule) -> Tuple[List, List, List]:
         # Skip initializing optimizers as DeepSpeed handles optimizers via config.
         # User may have specified config options instead in configure_optimizers, but this is handled
         # via `_format_config`
-        pass
+        return [], [], []  # empty optimizers, schedulers and frequencies
+
+    def optimizer_step(self, optimizer: torch.optim.Optimizer, lambda_closure: Callable, **kwargs):
+        self.model.step(**kwargs)
 
     def _format_config(self):
         if not self.config:
@@ -209,12 +219,12 @@ class DeepSpeedPlugin(ParallelPlugin):
         if "train_batch_size" in self.config or "train_micro_batch_size_per_gpu" in self.config:
             raise MisconfigurationException(
                 "Within the DeepSpeed config, do not set train_batch_size or train_micro_batch_size_per_gpu "
-                "as these will be set via gpus=x"
+                "as these will be passed from the data-loader."
             )
         if "gradient_accumulation_steps" in self.config:
             raise MisconfigurationException(
                 "Within the DeepSpeed config, do not set gradient_accumulation_steps "
-                "as this will be set via accumulate_grad_batches=x"
+                "as this will be set via accumulate_grad_batches=x argument passed via the Lightning Trainer."
             )
         self.config["train_micro_batch_size_per_gpu"] = self.model.train_dataloader().batch_size
         self.config["gradient_accumulation_steps"] = self.model.trainer.accumulate_grad_batches
@@ -253,3 +263,15 @@ class DeepSpeedPlugin(ParallelPlugin):
 
     def broadcast(self, obj: object, src: int = 0) -> object:
         return self.dist.broadcast(obj)
+
+    def training_step(self, *args, **kwargs):
+        return self.model(*args, **kwargs)
+
+    def validation_step(self, *args, **kwargs):
+        return self.model(*args, **kwargs)
+
+    def test_step(self, *args, **kwargs):
+        return self.model(*args, **kwargs)
+
+    def predict(self, *args, **kwargs):
+        return self.model(*args, **kwargs)

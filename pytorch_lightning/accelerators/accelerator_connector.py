@@ -243,7 +243,7 @@ class BackendConnector(object):
     def use_ddp(self):
         return self._distrib_type in (
             DistributedType.DDP, DistributedType.DDP_SPAWN, DistributedType.DDP_SHARDED,
-            DistributedType.DDP_SHARDED_SPAWN, DistributedType.DEEPSPEED
+            DistributedType.DDP_SHARDED_SPAWN
         )
 
     @property
@@ -284,7 +284,7 @@ class BackendConnector(object):
 
     def select_precision_plugin(self):
         self._set_precision_type()
-        if self.distributed_backend == 'deepspeed':
+        if self.distributed_backend == 'deepspeed' or isinstance(self._training_type_plugin, DeepSpeedPlugin):
             return DeepSpeedPrecisionPlugin(self.precision)
         if self.precision == 32:
             return PrecisionPlugin()

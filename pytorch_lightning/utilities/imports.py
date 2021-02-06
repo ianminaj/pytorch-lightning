@@ -15,6 +15,7 @@
 import importlib
 import platform
 from distutils.version import LooseVersion
+from importlib.metadata import version
 
 import torch
 
@@ -53,6 +54,7 @@ _FAIRSCALE_AVAILABLE = platform.system() != 'Windows' and _module_available('fai
 _RPC_AVAILABLE = platform.system() != 'Windows' and _module_available('torch.distributed.rpc')
 _GROUP_AVAILABLE = platform.system() != 'Windows' and _module_available('torch.distributed.group')
 _FAIRSCALE_PIPE_AVAILABLE = _FAIRSCALE_AVAILABLE and LooseVersion(torch.__version__) >= LooseVersion("1.6.0")
+_DEEPSPEED_AVAILABLE = platform.system() != 'Windows' and _module_available('deepspeed')
 _BOLTS_AVAILABLE = _module_available('pl_bolts')
 _PYTORCH_PRUNE_AVAILABLE = _module_available('torch.nn.utils.prune')
 _TORCHVISION_AVAILABLE = _module_available('torchvision')

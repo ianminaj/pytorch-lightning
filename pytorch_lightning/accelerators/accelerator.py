@@ -19,7 +19,7 @@ from torch.optim import Optimizer
 from pytorch_lightning.core import LightningModule
 from pytorch_lightning.plugins.precision import (
     ApexMixedPrecisionPlugin,
-    MixedPrecisionPlugin,
+    DeepSpeedPrecisionPlugin,
     NativeMixedPrecisionPlugin,
     PrecisionPlugin,
 )
@@ -274,12 +274,12 @@ class Accelerator(object):
         self.precision_plugin.pre_optimizer_step(optimizer, opt_idx)
         self.training_type_plugin.pre_optimizer_step(optimizer, opt_idx)
 
-        if isinstance(self.precision_plugin, ApexMixedPrecisionPlugin):
-            # apex does not support passing a closure to the optimizer, call it by itself
+        if isinstance(self.precision_plugin, (ApexMixedPrecisionPlugin, DeepSpeedPrecisionPlugin)):
+            # apex/deepspeed does not support passing a closure to the optimizer, call it by itself
             lambda_closure()
             lambda_closure = None
 
-        optimizer.step(closure=lambda_closure, **kwargs)
+        self.training_type_plugin.optimizer_step(optimizer, lambda_closure=lambda_closure, **kwargs)
 
         self.precision_plugin.post_optimizer_step(optimizer, opt_idx)
         self.training_type_plugin.post_optimizer_step(optimizer, opt_idx)

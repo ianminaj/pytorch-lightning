@@ -13,7 +13,7 @@
 # limitations under the License.
 import os
 from abc import ABC, abstractmethod
-from typing import Any, Optional, Sequence, TYPE_CHECKING, Union
+from typing import Any, Optional, Sequence, TYPE_CHECKING, Union, Callable
 
 import torch
 
@@ -118,3 +118,6 @@ class TrainingTypePlugin(Plugin, ABC):
 
     def init_optimizers(self, trainer: "Trainer", model: LightningModule):
         return trainer.init_optimizers(model)
+
+    def optimizer_step(self, optimizer: torch.optim.Optimizer, lambda_closure: Callable, **kwargs):
+        optimizer.step(closure=lambda_closure, **kwargs)
