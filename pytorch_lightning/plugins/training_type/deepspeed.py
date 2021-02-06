@@ -107,12 +107,13 @@ class DeepSpeedPlugin(ParallelPlugin):
             self._format_config()
             self._config_initialized = True
 
+        precision = self.lightning_module.trainer.accelerator_backend.precision
         model_parameters = filter(lambda p: p.requires_grad, self.model.parameters())
         model, optimizer, _, lr_scheduler = deepspeed.initialize(
             args=SimpleNamespace(local_rank=self.local_rank),
             model=LightningDeepSpeedModule(
                 pl_module=self.model,
-                precision=self.model.trainer.accelerator_connector.precision
+                precision=precision
             ),
             model_parameters=model_parameters,
             config_params=self.config,
