@@ -4,7 +4,7 @@ import torch
 from pytorch_lightning.core.lightning import LightningModule
 from torch.optim import Optimizer
 
-from pytorch_lightning.plugins.precision import PrecisionPlugin
+from pytorch_lightning.plugins.precision.precision_plugin import PrecisionPlugin
 
 
 class DeepSpeedPrecisionPlugin(PrecisionPlugin):
