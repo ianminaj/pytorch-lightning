@@ -115,3 +115,6 @@ class TrainingTypePlugin(Plugin, ABC):
 
     def predict(self, *args, **kwargs):
         return self.lightning_module.predict(*args, **kwargs)
+
+    def init_optimizers(self, trainer: "Trainer", model: LightningModule):
+        return trainer.init_optimizers(model)

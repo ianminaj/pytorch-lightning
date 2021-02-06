@@ -322,7 +322,8 @@ class Accelerator(object):
         """
         if trainer.testing is True:
             return
-        optimizers, lr_schedulers, optimizer_frequencies = trainer.init_optimizers(model)
+
+        optimizers, lr_schedulers, optimizer_frequencies = self.training_type_plugin.init_optimizers(trainer, model)
         self.optimizers = optimizers
         self.lr_schedulers = lr_schedulers
         self.optimizer_frequencies = optimizer_frequencies
